@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+drum_coach_mvp/data/*.db
+drum_coach_mvp/data/*.sqlite3
+drum_coach_mvp/data/*.sqlite
