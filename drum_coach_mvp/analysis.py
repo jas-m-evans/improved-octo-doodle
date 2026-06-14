@@ -25,6 +25,9 @@ DYNAMICS_CV_SCORE_SCALE = 180.0
 # Leave a small middle buffer so one transition hit does not dominate first-vs-second-half drift.
 DRIFT_FIRST_SECTION_RATIO = 0.45
 DRIFT_SECOND_SECTION_RATIO = 0.55
+ONSET_ENERGY_PERCENTILE_THRESHOLD = 15
+TEMPO_DIRECTION_RUSHED = "rushed"
+TEMPO_DIRECTION_DRAGGED = "dragged"
 
 
 class AnalysisError(ValueError):
@@ -141,7 +144,7 @@ def _generate_tips(
     tips: list[str] = []
 
     if abs(tempo_drift_bpm) >= 4:
-        direction = "rushed" if tempo_drift_bpm > 0 else "dragged"
+        direction = TEMPO_DIRECTION_RUSHED if tempo_drift_bpm > 0 else TEMPO_DIRECTION_DRAGGED
         tips.append(
             f"You {direction} by about {abs(tempo_drift_bpm):.1f} BPM in the second half; retry 5-10 BPM slower with a click."
         )
@@ -233,7 +236,9 @@ def analyze_audio_array(
     tempo_drift_score = clamp(100.0 - tempo_drift_penalty)
 
     onset_strengths = onset_envelope[onset_frames]
-    hit_energies = onset_strengths[onset_strengths > np.percentile(onset_strengths, 15)]
+    hit_energies = onset_strengths[
+        onset_strengths > np.percentile(onset_strengths, ONSET_ENERGY_PERCENTILE_THRESHOLD)
+    ]
     if hit_energies.size < 3:
         hit_energies = onset_strengths
     dynamics_score, dynamics_cv = _score_dynamics(hit_energies)
@@ -320,14 +325,27 @@ def _build_click_track(
 
 def _run_self_check() -> None:
     steady_audio = _build_click_track(120.0)
-    steady_result = analyze_audio_array(steady_audio, 22050, file_name="steady.wav", target_bpm=120, practice_type="single stroke")
+    steady_result = analyze_audio_array(
+        steady_audio,
+        22050,
+        file_name="steady.wav",
+        target_bpm=120,
+        practice_type="single stroke",
+        duration_seconds=8.0,
+    )
     assert 110.0 <= steady_result["estimated_bpm"] <= 130.0, steady_result
     assert steady_result["timing_stability_score"] >= 85.0, steady_result
     assert abs(steady_result["tempo_drift_bpm"]) <= 4.0, steady_result
     assert steady_result["overall_score"] >= 80.0, steady_result
 
     drifting_audio = _build_click_track(100.0, drift_bpm=12.0)
-    drifting_result = analyze_audio_array(drifting_audio, 22050, file_name="drifting.wav", practice_type="groove")
+    drifting_result = analyze_audio_array(
+        drifting_audio,
+        22050,
+        file_name="drifting.wav",
+        practice_type="groove",
+        duration_seconds=8.0,
+    )
     assert drifting_result["tempo_drift_bpm"] > 2.0, drifting_result
     assert len(drifting_result["coaching_tips"]) >= 2, drifting_result
 

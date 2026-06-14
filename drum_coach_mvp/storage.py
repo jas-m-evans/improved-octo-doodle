@@ -12,6 +12,7 @@ DB_PATH = DATA_DIR / "drum_coach_sessions.db"
 
 
 def get_connection() -> sqlite3.Connection:
+    """Return a SQLite connection; callers should use it in a with-statement."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(DB_PATH)
     connection.row_factory = sqlite3.Row

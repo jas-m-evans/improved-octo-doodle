@@ -14,7 +14,7 @@ st.set_page_config(page_title="Drum Coach MVP", layout="wide")
 
 
 @st.cache_data(show_spinner=False)
-def _history_frame(practice_type: str) -> pd.DataFrame:
+def _load_history_frame(practice_type: str) -> pd.DataFrame:
     return load_sessions(practice_type if practice_type != "All" else None)
 
 
@@ -38,7 +38,7 @@ def _history_section() -> None:
     st.subheader("Session history")
     filter_options = ["All", *PRACTICE_TYPES]
     selected_filter = st.selectbox("Filter history by practice type", filter_options, index=0)
-    history = _history_frame(selected_filter)
+    history = _load_history_frame(selected_filter)
 
     if history.empty:
         st.caption("No saved sessions yet. Analyze your first clip to start tracking progress.")
@@ -98,7 +98,7 @@ def main() -> None:
                         practice_type=practice_type,
                     )
                     save_session(result)
-                    _history_frame.clear()
+                    _load_history_frame.clear()
                 _show_result_dialog(result)
             except AnalysisError as exc:
                 st.error(str(exc))
