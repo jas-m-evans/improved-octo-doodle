@@ -19,7 +19,7 @@ A minimal local Streamlit app for fast drum practice feedback.
 From the repository root:
 
 ```bash
-cd /home/runner/work/improved-octo-doodle/improved-octo-doodle/jas-m-evans/improved-octo-doodle/drum_coach_mvp
+cd drum_coach_mvp
 python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
@@ -29,7 +29,7 @@ pip install -r requirements.txt
 ## Exact run command
 
 ```bash
-cd /home/runner/work/improved-octo-doodle/improved-octo-doodle/jas-m-evans/improved-octo-doodle/drum_coach_mvp
+cd drum_coach_mvp
 source .venv/bin/activate
 streamlit run app.py
 ```
@@ -47,7 +47,7 @@ streamlit run app.py
 Run the inline deterministic self-check:
 
 ```bash
-cd /home/runner/work/improved-octo-doodle/improved-octo-doodle/jas-m-evans/improved-octo-doodle/drum_coach_mvp
+cd drum_coach_mvp
 source .venv/bin/activate
 python analysis.py --self-check
 ```

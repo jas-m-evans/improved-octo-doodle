@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sqlite3
 import tempfile
 from pathlib import Path
 
@@ -101,7 +102,7 @@ def main() -> None:
                 _show_result_dialog(result)
             except AnalysisError as exc:
                 st.error(str(exc))
-            except Exception as exc:  # noqa: BLE001
+            except (OSError, RuntimeError, sqlite3.Error) as exc:
                 st.error(f"Unexpected error while analyzing the session: {exc}")
             finally:
                 temp_path.unlink(missing_ok=True)

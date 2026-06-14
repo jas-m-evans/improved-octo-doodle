@@ -7,8 +7,10 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+import audioread
 import librosa
 import numpy as np
+import soundfile
 
 PRACTICE_TYPES = ["single stroke", "doubles", "paradiddle", "groove", "fill", "other"]
 VIDEO_SUFFIXES = {".mp4", ".mov", ".m4v", ".mpeg", ".mpg"}
@@ -74,7 +76,7 @@ def load_audio_from_path(file_path: str | Path) -> tuple[np.ndarray, int, float]
 
     try:
         audio, sample_rate = librosa.load(load_target, sr=22050, mono=True)
-    except Exception as exc:  # noqa: BLE001
+    except (audioread.exceptions.DecodeError, soundfile.LibsndfileError, EOFError, ValueError) as exc:
         raise AnalysisError(
             "The file could not be decoded. Please try another recording or upload audio directly."
         ) from exc
