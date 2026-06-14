@@ -16,6 +16,15 @@ PRACTICE_TYPES = ["single stroke", "doubles", "paradiddle", "groove", "fill", "o
 VIDEO_SUFFIXES = {".mp4", ".mov", ".m4v", ".mpeg", ".mpg"}
 AUDIO_SUFFIXES = {".wav", ".mp3", ".ogg", ".flac", ".m4a", ".aac"}
 MIN_DURATION_SECONDS = 2.0
+# Ignore intervals outside a practical drum practice tempo band: ~750 BPM max to ~40 BPM min.
+MIN_VALID_IOI_SECONDS = 0.08
+MAX_VALID_IOI_SECONDS = 1.5
+# Linear score scales chosen so moderate CV stays usable while highly inconsistent takes fall quickly.
+TIMING_CV_SCORE_SCALE = 220.0
+DYNAMICS_CV_SCORE_SCALE = 180.0
+# Leave a small middle buffer so one transition hit does not dominate first-vs-second-half drift.
+DRIFT_FIRST_SECTION_RATIO = 0.45
+DRIFT_SECOND_SECTION_RATIO = 0.55
 
 
 class AnalysisError(ValueError):
@@ -103,7 +112,7 @@ def _score_timing_stability(iois: np.ndarray) -> tuple[float, float]:
     if mean_ioi <= 0:
         return 0.0, 1.0
     ioi_cv = float(np.std(iois) / mean_ioi)
-    score = clamp(100.0 - (ioi_cv * 220.0))
+    score = clamp(100.0 - (ioi_cv * TIMING_CV_SCORE_SCALE))
     return score, ioi_cv
 
 
@@ -112,7 +121,7 @@ def _score_dynamics(hit_energies: np.ndarray) -> tuple[float, float]:
     if mean_energy <= 0:
         return 0.0, 1.0
     energy_cv = float(np.std(hit_energies) / mean_energy)
-    score = clamp(100.0 - (energy_cv * 180.0))
+    score = clamp(100.0 - (energy_cv * DYNAMICS_CV_SCORE_SCALE))
     return score, energy_cv
 
 
@@ -202,7 +211,7 @@ def analyze_audio_array(
         )
 
     iois = np.diff(onset_times)
-    valid_mask = (iois >= 0.08) & (iois <= 1.5)
+    valid_mask = (iois >= MIN_VALID_IOI_SECONDS) & (iois <= MAX_VALID_IOI_SECONDS)
     valid_iois = iois[valid_mask]
     valid_starts = onset_times[:-1][valid_mask]
     if valid_iois.size < 3:
@@ -213,8 +222,8 @@ def analyze_audio_array(
     estimated_bpm = _tempo_from_iois(valid_iois)
     timing_score, timing_cv = _score_timing_stability(valid_iois)
 
-    first_cutoff = duration_seconds * 0.45
-    second_cutoff = duration_seconds * 0.55
+    first_cutoff = duration_seconds * DRIFT_FIRST_SECTION_RATIO
+    second_cutoff = duration_seconds * DRIFT_SECOND_SECTION_RATIO
     first_half_iois = valid_iois[valid_starts < first_cutoff]
     second_half_iois = valid_iois[valid_starts >= second_cutoff]
     first_half_bpm = _tempo_from_iois(first_half_iois) if first_half_iois.size >= 2 else estimated_bpm
@@ -254,6 +263,12 @@ def analyze_audio_array(
         "overall_score": round(overall_score, 1),
         "coaching_tips": coaching_tips,
         "score_weights": {"timing": 0.5, "drift": 0.2, "dynamics": 0.3},
+        "score_rubric": {
+            "timing_cv_scale": TIMING_CV_SCORE_SCALE,
+            "dynamics_cv_scale": DYNAMICS_CV_SCORE_SCALE,
+            "valid_ioi_seconds": [MIN_VALID_IOI_SECONDS, MAX_VALID_IOI_SECONDS],
+            "drift_sections": [DRIFT_FIRST_SECTION_RATIO, DRIFT_SECOND_SECTION_RATIO],
+        },
     }
 
 

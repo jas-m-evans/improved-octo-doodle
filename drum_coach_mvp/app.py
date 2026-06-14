@@ -76,7 +76,7 @@ def main() -> None:
             help="Video uploads require ffmpeg for audio extraction. Audio uploads are the simplest path.",
         )
     with config_col:
-        target_bpm_value = st.number_input("Target BPM (optional, 0 = none)", min_value=0, max_value=400, value=0, step=1)
+        target_bpm = st.number_input("Target BPM (optional, 0 = none)", min_value=0, max_value=400, value=0, step=1)
         practice_type = st.selectbox("Practice type", PRACTICE_TYPES, index=0)
 
     analyze_clicked = st.button("Analyze Session", type="primary", use_container_width=True)
@@ -94,7 +94,7 @@ def main() -> None:
                 with st.spinner("Analyzing session..."):
                     result = analyze_practice_file(
                         temp_path,
-                        target_bpm=float(target_bpm_value) if target_bpm_value > 0 else None,
+                        target_bpm=float(target_bpm) if target_bpm > 0 else None,
                         practice_type=practice_type,
                     )
                     save_session(result)
